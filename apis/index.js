@@ -6,6 +6,7 @@ const express = require("express");
 
 const { SERVER_PORT } = require("./constants");
 const { createDirectoryIfNotExists } = require("./utils/helpers/files");
+const voiceRoutes = require('./routes/voiceRoutes');
 
 const app = express();
 
@@ -37,7 +38,7 @@ app.get("/", (req, res) => {
     .status(400)
     .json({ status: false, message: "Welcome to Voice Assistant API." });
 });
-// app.use("/api/leads", leadRoutes);
+app.use("/api/voice", voiceRoutes);
 
 app.listen(SERVER_PORT, () => {
   console.log(`Server is running on port ${SERVER_PORT}`);
