@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSpeechRecognition } from './components/SpeechRecognition';
+import { useSpeechRecognition } from './components/shared/SpeechRecognition';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './components/ui/card';
 import { Button } from './components/ui/button';
-import VoiceWave from './components/VoiceWave';
-import ChatHistory from './components/ChatHistory';
+import VoiceWave from './components/shared/VoiceWave';
+import ChatHistory from './components/shared/ChatHistory';
 import { Mic, MicOff } from 'lucide-react';
 import { cn } from './lib/utils';
 
