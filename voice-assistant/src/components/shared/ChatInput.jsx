@@ -1,9 +1,21 @@
 import React, { useState, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import VoiceWave from "./VoiceWave";
+import { cn } from "../../lib/utils";
+import { Button } from "../ui/button";
+import { Mic, MicOff } from "lucide-react";
 
 const mimeToExtension = {
-  'audio/webm': 'webm',
-  'audio/wav': 'wav',
-  'audio/mp4': 'm4a',
+  "audio/webm": "webm",
+  "audio/wav": "wav",
+  "audio/mp4": "m4a",
 };
 
 const ChatInput = () => {
@@ -20,34 +32,37 @@ const ChatInput = () => {
   const detectLanguage = async (audioBlob, mimeType) => {
     try {
       const formData = new FormData();
-      const extension = mimeToExtension[mimeType] || 'webm';
-      formData.append('file', audioBlob, `audio.${extension}`);
-      formData.append('model', 'whisper-1');
-      formData.append('response_format', 'verbose_json');
+      const extension = mimeToExtension[mimeType] || "webm";
+      formData.append("file", audioBlob, `audio.${extension}`);
+      formData.append("model", "whisper-1");
+      formData.append("response_format", "verbose_json");
 
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-        },
-        body: formData
-      });
+      const response = await fetch(
+        "https://api.openai.com/v1/audio/transcriptions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Language detection error:', error);
-        throw new Error('Failed to detect language');
+        console.error("Language detection error:", error);
+        throw new Error("Failed to detect language");
       }
 
       const data = await response.json();
       if (data.language) {
         const detectedLang = data.language.toLowerCase();
-        console.log('Detected language in detectLanguage:', detectedLang);
+        console.log("Detected language in detectLanguage:", detectedLang);
         setDetectedLanguage(detectedLang.toUpperCase());
         return detectedLang.toUpperCase();
       }
     } catch (err) {
-      console.error('Error detecting language:', err);
+      console.error("Error detecting language:", err);
     }
     return null;
   };
@@ -58,35 +73,41 @@ const ChatInput = () => {
 
       // First, ensure we have the latest language detection
       const currentLanguage = await detectLanguage(audioBlob, mimeType);
-      console.log('Current language before translation:', currentLanguage);
+      console.log("Current language before translation:", currentLanguage);
 
       const formData = new FormData();
-      const extension = mimeToExtension[mimeType] || 'mp3';
-      formData.append('file', audioBlob, `audio.${extension}`);
-      formData.append('model', 'whisper-1');
-      formData.append('response_format', 'verbose_json');
-      formData.append('prompt', `Translate to English while preserving all technical terms (like API names, programming languages, frameworks, technical concepts). 
+      const extension = mimeToExtension[mimeType] || "mp3";
+      formData.append("file", audioBlob, `audio.${extension}`);
+      formData.append("model", "whisper-1");
+      formData.append("response_format", "verbose_json");
+      formData.append(
+        "prompt",
+        `Translate to English while preserving all technical terms (like API names, programming languages, frameworks, technical concepts). 
 After translation, analyze the content to identify if the user is describing a website, mobile app, desktop application, or other software project. 
-If the project type is not explicitly mentioned, add the appropriate term based on context.`);
+If the project type is not explicitly mentioned, add the appropriate term based on context.`
+      );
 
       // Use translations endpoint only if language is not English
-      const isNonEnglish = currentLanguage && currentLanguage.toLowerCase() !== 'en';
+      const isNonEnglish =
+        currentLanguage && currentLanguage.toLowerCase() !== "en";
       const endpoint = isNonEnglish
-        ? 'https://api.openai.com/v1/audio/translations'
-        : 'https://api.openai.com/v1/audio/transcriptions';
+        ? "https://api.openai.com/v1/audio/translations"
+        : "https://api.openai.com/v1/audio/transcriptions";
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
         },
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(errorData.error?.message || 'Failed to convert audio to text');
+        console.error("API Error:", errorData);
+        throw new Error(
+          errorData.error?.message || "Failed to convert audio to text"
+        );
       }
 
       const data = await response.json();
@@ -95,14 +116,13 @@ If the project type is not explicitly mentioned, add the appropriate term based 
       if (isNonEnglish && data.text.trim()) {
         setTranslationStatus(`Translated from ${currentLanguage}`);
       } else {
-        setTranslationStatus('');
+        setTranslationStatus("");
       }
-
     } catch (err) {
-      console.error('Error converting audio to text:', err);
-      alert('Failed to convert audio to text. Please try typing instead.');
-      setInputText('');
-      setTranslationStatus('');
+      console.error("Error converting audio to text:", err);
+      alert("Failed to convert audio to text. Please try typing instead.");
+      setInputText("");
+      setTranslationStatus("");
     } finally {
       setIsProcessingAudio(false);
     }
@@ -121,21 +141,26 @@ If the project type is not explicitly mentioned, add the appropriate term based 
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: mediaRecorderRef.current.mimeType });
+        const audioBlob = new Blob(chunksRef.current, {
+          type: mediaRecorderRef.current.mimeType,
+        });
         await convertAudioToText(audioBlob, mediaRecorderRef.current.mimeType);
         // Stop all tracks to release microphone
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorderRef.current.start();
       setIsListening(true);
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error("Error starting recording:", error);
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
       mediaRecorderRef.current.stop();
       setIsListening(false);
     }
@@ -151,16 +176,19 @@ If the project type is not explicitly mentioned, add the appropriate term based 
 
   const playAudioResponse = async (text) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/api/voice/get-solution`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: text })
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/api/voice/get-solution`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt: text }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to get audio response');
+        throw new Error("Failed to get audio response");
       }
 
       // Get the audio stream from the response
@@ -182,15 +210,15 @@ If the project type is not explicitly mentioned, add the appropriate term based 
         URL.revokeObjectURL(audioUrl); // Clean up the URL
       };
       audio.onerror = (e) => {
-        console.error('Audio playback error:', e);
+        console.error("Audio playback error:", e);
         setIsPlaying(false);
         URL.revokeObjectURL(audioUrl);
       };
 
       await audio.play();
     } catch (error) {
-      console.error('Error playing audio:', error);
-      alert('Failed to play audio response');
+      console.error("Error playing audio:", error);
+      alert("Failed to play audio response");
     }
   };
 
@@ -202,42 +230,94 @@ If the project type is not explicitly mentioned, add the appropriate term based 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-4 border rounded-lg">
-      <input
-        type="text"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        className="flex-1 p-2 border rounded"
-        placeholder="Type or speak your message..."
-      />
-      <button
-        type="button"
-        onClick={toggleListening}
-        disabled={isProcessingAudio}
-        className={`p-2 rounded-full ${
-          isListening ? "bg-red-500" : "bg-blue-500"
-        } text-white ${isProcessingAudio ? "opacity-50 cursor-not-allowed" : ""}`}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-6 h-6"
+    <form
+      onSubmit={handleSubmit}
+      className="w-full flex justify-center items-center gap-2"
+    >
+      <Card className="w-full max-w-xl shadow-lg border-0 overflow-hidden">
+        <CardHeader
+          className={cn(
+            "text-center transition-all duration-500",
+            isListening ? "pb-0" : "pb-4"
+          )}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+          <CardTitle className="text-3xl font-bold text-blue-600">
+            Voice Assistant
+          </CardTitle>
+          <CardDescription className="text-slate-600">
+            {isListening
+              ? "I'm listening to you..."
+              : "Tap the microphone and start speaking"}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4 px-0 pt-2">
+          {/* Voice Visualization - takes more space when listening */}
+          <VoiceWave
+            isListening={isListening}
+            className={isListening ? "mt-2" : ""}
           />
-        </svg>
-      </button>
-      <button
+
+          {/* Current Transcript - more prominent when active */}
+          {isListening && inputText && (
+            <div className="mx-6 p-4 bg-blue-50 text-blue-700 rounded-md border border-blue-100 shadow-sm text-center">
+              <p className="text-sm text-blue-400 mb-1">I heard:</p>
+              <p className="font-medium">"{inputText}"</p>
+            </div>
+          )}
+
+          {/* Mobile Chat History (visible on small screens) */}
+          {/* <div className={cn(
+              "lg:hidden mx-6",
+              isListening ? "opacity-60" : "opacity-100"  
+            )}>
+              <h3 className="text-sm font-medium text-slate-500 mb-2">Recent Messages</h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {chats.slice(-3).map(chat => (
+                  <div
+                    key={chat.id}
+                    className={`p-3 rounded-md ${
+                      chat.isUser
+                        ? "bg-blue-500 text-white ml-auto rounded-br-none max-w-[80%]"
+                        : "bg-gray-100 text-gray-800 rounded-bl-none max-w-[80%]"
+                    }`}
+                  >
+                    {chat.text}
+                  </div>
+                ))}
+              </div>
+            </div> */}
+        </CardContent>
+
+        <CardFooter className="flex justify-center pb-8">
+          <Button
+            variant="primary"
+            size="circle"
+            onClick={toggleListening}
+            disabled={isProcessingAudio}
+            className={cn(
+              "shadow-lg transition-all duration-300 z-10",
+              isListening
+                ? "bg-red-500 hover:bg-red-600 ripple-effect scale-110"
+                : "bg-blue-500 hover:bg-blue-600"
+            )}
+          >
+            {isListening ? (
+              <MicOff className="h-6 w-6" />
+            ) : (
+              <Mic className="h-6 w-6" />
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* <button
         type="submit"
         disabled={!inputText.trim() || isProcessingAudio}
         className={`p-2 rounded-full bg-green-500 text-white ${
-          (!inputText.trim() || isProcessingAudio) ? "opacity-50 cursor-not-allowed" : ""
+          !inputText.trim() || isProcessingAudio
+            ? "opacity-50 cursor-not-allowed"
+            : ""
         }`}
       >
         {isPlaying ? (
@@ -276,7 +356,7 @@ If the project type is not explicitly mentioned, add the appropriate term based 
       </button>
       {translationStatus && (
         <div className="text-sm text-gray-500 ml-2">{translationStatus}</div>
-      )}
+      )} */}
     </form>
   );
 };
