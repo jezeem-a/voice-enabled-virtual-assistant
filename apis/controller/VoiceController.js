@@ -30,26 +30,49 @@ const VoiceController = {
         throw new Error(audioError);
       }
 
-      const { audioUrl, error: audioSaveError } = await saveAudioStream({
-        audioStream,
-      });
-      if (audioSaveError) {
-        throw new Error(audioSaveError);
-      }
+      // const { audioUrl, error: audioSaveError } = await saveAudioStream({
+      //   audioStream,
+      // });
+      // if (audioSaveError) {
+      //   throw new Error(audioSaveError);
+      // }
+      // Set appropriate headers for audio streaming
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Transfer-Encoding', 'chunked');
 
-      return res.status(200).json({
-        status: true,
-        audioUrl,
-        message: "Converted user input to audio successfully.",
+      // return res.status(200).json({
+      //   status: true,
+      //   // audioUrl,
+      //   audioUrl: "",
+      //   message: "Converted user input to audio successfully.",
+      // });
+      
+      // Stream the audio directly to the client
+      audioStream.pipe(res);
+
+      // Handle any errors during streaming
+      audioStream.on('error', (error) => {
+        console.error('Error streaming audio:', error);
+        // Only send error if headers haven't been sent
+        if (!res.headersSent) {
+          res.status(500).json({
+            status: false,
+            message: "Error streaming audio response",
+          });
+        }
       });
-    } catch (e) {
-      console.log(e);
-      return res.status(500).json({
-        status: false,
-        message: "Something went wrong in the server.",
-      });
+
+    } catch (err) {
+      console.error('Error in getUserSolution:', err);
+      // Only send error if headers haven't been sent
+      if (!res.headersSent) {
+        res.status(500).json({
+          status: false,
+          message: err.message || "Failed to process voice response",
+        });
+      }
     }
-  },
+  }
 };
 
 module.exports = VoiceController;

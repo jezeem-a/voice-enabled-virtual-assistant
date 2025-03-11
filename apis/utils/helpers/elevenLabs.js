@@ -22,6 +22,7 @@ const generateAudioFromText = async ({ text, voiceId }) => {
 
     return { audioStream };
   } catch (error) {
+    console.log("Error generating audio stream: ", error)
     return { error: "Error generating audio stream" };
   }
 };
@@ -58,6 +59,7 @@ const saveAudioStream = async ({ audioStream }) => {
 
     return { audioUrl: `/audio/${filename}` };
   } catch (error) {
+    console.log("Error while saving audio file: ", error)
     return { error: "Error saving audio stream" };
   }
 };
