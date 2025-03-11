@@ -1,5 +1,4 @@
-import React from 'react';
-import { cn } from '../lib/utils';
+import { cn } from "../../lib/utils";
 
 export default function VoiceWave({ isListening, className }) {
   return (

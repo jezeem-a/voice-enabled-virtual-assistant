@@ -1,6 +1,6 @@
-import React from 'react';
-import { ScrollArea } from './ui/scroll-area';
-import { cn } from '../lib/utils';
+
+import { cn } from "../../lib/utils";
+import { ScrollArea } from "../ui/scroll-area";
 
 export default function ChatHistory({ chats, className }) {
   return (
