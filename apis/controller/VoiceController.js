@@ -3,6 +3,7 @@ const {
   saveAudioStream,
 } = require("../utils/helpers/elevenLabs");
 const { generateCallerResponse } = require("../utils/helpers/openAI");
+const ChatModal = require("../models/chat");
 
 const VoiceController = {
   getUserSolution: async (req, res) => {
@@ -21,6 +22,8 @@ const VoiceController = {
         throw new Error("Failed to analyze user prompt.");
       }
       const { text: text_input } = callerResponse;
+      
+      const task = await ChatModal.create({ text: text_input });
 
       const { audioStream, error: audioError } = await generateAudioFromText({
         text: text_input,
