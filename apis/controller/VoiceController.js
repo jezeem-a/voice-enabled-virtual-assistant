@@ -3,6 +3,7 @@ const {
   saveAudioStream,
 } = require("../utils/helpers/elevenLabs");
 const { generateCallerResponse } = require("../utils/helpers/openAI");
+
 const ChatModal = require("../models/chat");
 
 const VoiceController = {
@@ -22,8 +23,13 @@ const VoiceController = {
         throw new Error("Failed to analyze user prompt.");
       }
       const { text: text_input } = callerResponse;
-      
-      const task = await ChatModal.create({ text: text_input });
+      const chat = new ChatModal({
+        sessionId: req.sessionId,
+        message: prompt,
+        response: text_input,
+      });
+
+      await chat.save();
 
       const { audioStream, error: audioError } = await generateAudioFromText({
         text: text_input,
@@ -39,11 +45,30 @@ const VoiceController = {
       if (audioSaveError) {
         throw new Error(audioSaveError);
       }
-
       return res.status(200).json({
         status: true,
         audioUrl,
         message: "Converted user input to audio successfully.",
+      });
+    } catch (e) {
+      console.log(e);
+      return res.status(500).json({
+        status: false,
+        message: "Something went wrong in the server.",
+      });
+    }
+  },
+
+  getChatHistory: async (req, res) => {
+    try {
+      const chatHistory = await ChatModal.find({
+        sessionId: req.sessionId,
+      }).sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        status: true,
+        chatHistory,
+        message: "Fetched chat history successfully.",
       });
     } catch (e) {
       console.log(e);

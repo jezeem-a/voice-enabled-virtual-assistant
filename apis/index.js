@@ -4,6 +4,8 @@ const cors = require("cors");
 const path = require("path");
 const express = require("express");
 const dotenv = require("dotenv");
+const { v4: uuidv4 } = require("uuid");
+const cookieParser = require("cookie-parser");
 
 // const { SERVER_PORT } = require("./constants");
 SERVER_PORT = process.env.PORT || 5000;
@@ -30,6 +32,7 @@ app.use(cors(corsOptions));
 // Middleware to parse Twilio webhook requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); 
 
 connectToDB();
 
@@ -38,13 +41,35 @@ const publicPath = path.join(__dirname, "public");
 createDirectoryIfNotExists(publicPath)
 app.use(express.static(path.join(__dirname, "public")));
 
+
+
 app.get("/", (req, res) => {
   return res
     .status(400)
     .json({ status: false, message: "Welcome to Voice Assistant API." });
 });
 
+app.use((req, res, next) => {
+  console.log("Cookies before setting sessionId:", req.cookies); // Debugging step
+
+  if (!req.cookies.sessionId) {
+      const newSessionId = uuidv4();
+      res.cookie("sessionId", newSessionId, {
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000
+      });
+      req.sessionId = newSessionId; // ✅ Assign newly created sessionId
+  } else {
+      req.sessionId = req.cookies.sessionId; // ✅ Use existing sessionId
+  }
+
+  console.log("req.sessionId:", req.sessionId); // Debugging step
+  next();
+});
+
+
 app.use("/api/voice", voiceRoutes);
+
 
 app.listen(SERVER_PORT, () => {
   console.log(`Server is running on port ${SERVER_PORT}`);
